@@ -36,27 +36,17 @@
             </div>
         </div>
 
-        <!-- Statistics -->
-        <div class="stats-bar">
-            <div class="stat-card">
-                <i class="fas fa-file-pdf"></i>
-                <h3 id="totalPdfs">0</h3>
-                <p>Total PDFs</p>
+        <!-- View Controls -->
+        <div class="view-controls">
+            <div class="view-toggle">
+                <button class="view-btn active" id="gridViewBtn" title="Grid View">
+                    <i class="fas fa-th-large"></i>
+                </button>
+                <button class="view-btn" id="listViewBtn" title="List View">
+                    <i class="fas fa-list"></i>
+                </button>
             </div>
-            <div class="stat-card">
-                <i class="fas fa-tags"></i>
-                <h3 id="totalCategories">0</h3>
-                <p>Categories</p>
-            </div>
-            <div class="stat-card">
-                <i class="fas fa-download"></i>
-                <h3 id="totalDownloads">0</h3>
-                <p>Total Downloads</p>
-            </div>
-        </div>
-
-        <!-- Categories Dropdown -->
-        <div class="categories-dropdown-section">
+            
             <div class="dropdown-wrapper">
                 <div class="dropdown-header" id="dropdownHeader">
                     <i class="fas fa-filter"></i>
@@ -64,19 +54,13 @@
                     <i class="fas fa-chevron-down" id="dropdownArrow"></i>
                 </div>
                 <div class="dropdown-content" id="categoriesDropdown">
-                    <div class="dropdown-item" data-category="all">All Categories</div>
+                    <div class="dropdown-item active" data-category="all">All Categories</div>
                     <!-- Categories will be loaded here -->
                 </div>
             </div>
-            <button class="btn btn-primary" id="gridViewBtn" title="Grid View">
-                <i class="fas fa-th-large"></i>
-            </button>
-            <button class="btn btn-primary" id="listViewBtn" title="List View">
-                <i class="fas fa-list"></i>
-            </button>
         </div>
 
-        <!-- PDF Grid (Icon View - 3 columns x 5 rows) -->
+        <!-- PDF Icon Grid (3 columns x 5 rows) -->
         <div class="pdf-icon-grid" id="pdfIconGrid">
             <div class="loading">
                 <div class="loading-spinner"></div>
@@ -95,6 +79,27 @@
             <button class="pagination-btn" id="prevBtn"><i class="fas fa-chevron-left"></i> Previous</button>
             <div class="page-numbers" id="pageNumbers"></div>
             <button class="pagination-btn" id="nextBtn">Next <i class="fas fa-chevron-right"></i></button>
+        </div>
+
+        <!-- Statistics Cards (At the bottom) -->
+        <div class="stats-section">
+            <div class="stats-bar">
+                <div class="stat-card">
+                    <i class="fas fa-file-pdf"></i>
+                    <h3 id="totalPdfs">0</h3>
+                    <p>Total PDFs</p>
+                </div>
+                <div class="stat-card">
+                    <i class="fas fa-tags"></i>
+                    <h3 id="totalCategories">0</h3>
+                    <p>Categories</p>
+                </div>
+                <div class="stat-card">
+                    <i class="fas fa-download"></i>
+                    <h3 id="totalDownloads">0</h3>
+                    <p>Total Downloads</p>
+                </div>
+            </div>
         </div>
     </div>
 
