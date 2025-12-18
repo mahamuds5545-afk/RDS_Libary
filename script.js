@@ -1,4 +1,4 @@
-// Firebase Configuration
+// ==================== FIREBASE CONFIGURATION ====================
 const firebaseConfig = {
     apiKey: "AIzaSyDm-pq9lsbn5KASjtbeOrdIdyXdc9WgRoQ",
     authDomain: "rds-library.firebaseapp.com",
@@ -30,27 +30,26 @@ let currentView = 'grid';
 let currentPage = 1;
 const itemsPerPage = 15;
 
-// Initialize the application
+// Initialize when DOM is ready
 document.addEventListener('DOMContentLoaded', function() {
-    console.log("📚 PDF Library Viewer Loading...");
+    console.log("📚 PDF Library Viewer Initializing...");
     
-    // Initialize Firebase
     if (!database) {
         showError("Firebase not available. Check console for errors.");
         return;
     }
     
-    // Load data
+    // Load initial data
     loadCategories();
     loadPDFs();
     
-    // Setup event listeners
-    setupEventListeners();
+    // Setup all event listeners
+    setupAllEventListeners();
 });
 
-// Load categories from Firebase
+// ==================== DATA LOADING ====================
 function loadCategories() {
-    console.log("Loading categories...");
+    console.log("📂 Loading categories...");
     
     database.ref('categories').on('value', (snapshot) => {
         categories = [];
@@ -65,19 +64,18 @@ function loadCategories() {
             console.log(`✅ Loaded ${categories.length} categories`);
             renderCategoriesDropdown();
         } else {
-            console.log("⚠️ No categories found");
+            console.log("⚠️ No categories found in database");
         }
         
         updateStats();
     }, (error) => {
         console.error("❌ Error loading categories:", error);
-        showError("Failed to load categories.");
+        showError("Failed to load categories from database.");
     });
 }
 
-// Load PDFs from Firebase
 function loadPDFs() {
-    console.log("Loading PDFs...");
+    console.log("📂 Loading PDFs...");
     
     database.ref('pdfs').on('value', (snapshot) => {
         pdfs = [];
@@ -91,18 +89,18 @@ function loadPDFs() {
             });
             console.log(`✅ Loaded ${pdfs.length} PDFs`);
         } else {
-            console.log("⚠️ No PDFs found");
+            console.log("⚠️ No PDFs found in database");
         }
         
         filterPdfs();
         updateStats();
     }, (error) => {
         console.error("❌ Error loading PDFs:", error);
-        showError("Failed to load PDFs.");
+        showError("Failed to load PDFs from database.");
     });
 }
 
-// Render categories dropdown
+// ==================== UI RENDERING ====================
 function renderCategoriesDropdown() {
     const dropdown = document.getElementById('categoriesDropdown');
     if (!dropdown) return;
@@ -118,12 +116,10 @@ function renderCategoriesDropdown() {
     });
 }
 
-// Filter PDFs based on search and category
 function filterPdfs() {
     const searchInput = document.getElementById('searchInput');
     const searchTerm = searchInput ? searchInput.value.toLowerCase() : '';
     
-    // Start with all PDFs
     filteredPdfs = [...pdfs];
     
     // Filter by category
@@ -138,7 +134,19 @@ function filterPdfs() {
         filteredPdfs = filteredPdfs.filter(pdf => {
             const nameMatch = pdf.name && pdf.name.toLowerCase().includes(searchTerm);
             const descMatch = pdf.description && pdf.description.toLowerCase().includes(searchTerm);
-            return nameMatch || descMatch;
+            
+            // Also search in category names
+            let categoryMatch = false;
+            if (pdf.categories) {
+                pdf.categories.forEach(catId => {
+                    const cat = categories.find(c => c.id === catId);
+                    if (cat && cat.name && cat.name.toLowerCase().includes(searchTerm)) {
+                        categoryMatch = true;
+                    }
+                });
+            }
+            
+            return nameMatch || descMatch || categoryMatch;
         });
     }
     
@@ -146,60 +154,57 @@ function filterPdfs() {
     renderPagination();
 }
 
-// Render PDFs based on current view
 function renderPDFs() {
     if (currentView === 'grid') {
-        renderGrid();
+        renderGridView();
     } else {
-        renderList();
+        renderListView();
     }
 }
 
-// Render grid view
-function renderGrid() {
+function renderGridView() {
     const container = document.getElementById('pdfIconGrid');
     if (!container) return;
     
-    // Show loading if no PDFs
     if (filteredPdfs.length === 0) {
         container.innerHTML = `
             <div class="empty-state">
                 <i class="fas fa-file-pdf"></i>
                 <h3>No PDFs Found</h3>
-                <p>${pdfs.length === 0 ? 'No PDFs in library' : 'Try different search or category'}</p>
+                <p>${pdfs.length === 0 ? 'The library is empty. Add some PDFs!' : 'Try a different search or category.'}</p>
             </div>
         `;
         return;
     }
     
-    // Calculate items for current page
     const startIndex = (currentPage - 1) * itemsPerPage;
     const endIndex = Math.min(startIndex + itemsPerPage, filteredPdfs.length);
     const pagePdfs = filteredPdfs.slice(startIndex, endIndex);
     
-    // Generate HTML
     let html = '';
     pagePdfs.forEach(pdf => {
         // Get category name
         let categoryName = 'Uncategorized';
         if (pdf.categories && pdf.categories.length > 0) {
-            const firstCategory = categories.find(cat => cat.id === pdf.categories[0]);
+            const firstCatId = pdf.categories[0];
+            const firstCategory = categories.find(cat => cat.id === firstCatId);
             if (firstCategory) {
                 categoryName = firstCategory.name;
             }
         }
         
-        // Truncate name if too long
-        const displayName = pdf.name && pdf.name.length > 30 
-            ? pdf.name.substring(0, 30) + '...' 
+        // Truncate name
+        const displayName = pdf.name && pdf.name.length > 25 
+            ? pdf.name.substring(0, 25) + '...' 
             : pdf.name || 'Unnamed PDF';
         
-        // File type icon
-        const fileTypeIcon = pdf.type === 'drive' ? 'fab fa-google-drive' : 'fas fa-file-upload';
-        const fileTypeClass = pdf.type === 'drive' ? 'drive' : '';
+        // File type
+        const isDrive = pdf.type === 'drive';
+        const fileTypeIcon = isDrive ? 'fab fa-google-drive' : 'fas fa-file-upload';
+        const fileTypeClass = isDrive ? 'drive' : '';
         
         html += `
-        <div class="pdf-icon-item" onclick="openPDF('${pdf.id}')">
+        <div class="pdf-icon-item" onclick="openPDFModal('${pdf.id}')">
             <div class="download-count">
                 <i class="fas fa-download"></i> ${pdf.downloads || 0}
             </div>
@@ -209,7 +214,7 @@ function renderGrid() {
             <i class="fas fa-file-pdf"></i>
             <h4>${displayName}</h4>
             <div class="file-size">${pdf.size || 'N/A'}</div>
-            <div class="category-tag">${categoryName}</div>
+            <div class="category-tag" title="${categoryName}">${categoryName}</div>
         </div>
         `;
     });
@@ -217,36 +222,48 @@ function renderGrid() {
     container.innerHTML = html;
 }
 
-// Render list view (simplified for now)
-function renderList() {
+function renderListView() {
     const container = document.getElementById('pdfIconGrid');
     if (!container) return;
     
-    container.innerHTML = '<div class="empty-state"><p>List view will be implemented soon</p></div>';
+    container.innerHTML = `
+        <div class="empty-state">
+            <i class="fas fa-list"></i>
+            <h3>List View Coming Soon</h3>
+            <p>Currently showing grid view. List view will be available in the next update.</p>
+        </div>
+    `;
 }
 
-// Render pagination
 function renderPagination() {
     const pagination = document.getElementById('pagination');
     const pageNumbers = document.getElementById('pageNumbers');
     
     if (!pagination || !pageNumbers) return;
     
-    // Hide pagination if not needed
     if (filteredPdfs.length <= itemsPerPage) {
         pagination.style.display = 'none';
         return;
     }
     
     pagination.style.display = 'flex';
-    
-    // Calculate total pages
     const totalPages = Math.ceil(filteredPdfs.length / itemsPerPage);
     
-    // Clear existing page numbers
     pageNumbers.innerHTML = '';
     
-    // Add page numbers
+    // Previous button
+    const prevBtn = document.getElementById('prevBtn');
+    if (prevBtn) {
+        prevBtn.disabled = currentPage === 1;
+    }
+    
+    // Next button
+    const nextBtn = document.getElementById('nextBtn');
+    if (nextBtn) {
+        nextBtn.disabled = currentPage === totalPages;
+    }
+    
+    // Page numbers
     for (let i = 1; i <= totalPages; i++) {
         const pageNum = document.createElement('div');
         pageNum.className = `page-number ${i === currentPage ? 'active' : ''}`;
@@ -258,27 +275,121 @@ function renderPagination() {
         };
         pageNumbers.appendChild(pageNum);
     }
-    
-    // Update button states
-    document.getElementById('prevBtn').disabled = currentPage === 1;
-    document.getElementById('nextBtn').disabled = currentPage === totalPages;
 }
 
-// Update statistics
+// ==================== MODAL FUNCTIONS ====================
+function openPDFModal(pdfId) {
+    const pdf = pdfs.find(p => p.id === pdfId);
+    if (!pdf) {
+        alert('PDF not found in database.');
+        return;
+    }
+    
+    console.log("Opening PDF:", pdf);
+    
+    // Update modal content
+    document.getElementById('modalPdfTitle').textContent = pdf.name || 'PDF Document';
+    document.getElementById('viewingPdfName').textContent = pdf.name || 'PDF Document';
+    document.getElementById('pdfViewerMessage').textContent = pdf.description || 'No description available.';
+    
+    // Handle Google Drive link
+    const driveContainer = document.getElementById('driveEmbedContainer');
+    const driveLink = document.getElementById('driveViewLink');
+    
+    if (driveContainer && driveLink) {
+        if (pdf.type === 'drive' && pdf.driveLink) {
+            // Set Google Drive link
+            const driveUrl = pdf.driveLink.startsWith('http') 
+                ? pdf.driveLink 
+                : `https://drive.google.com/file/d/${pdf.driveLink}/view`;
+            
+            driveLink.href = driveUrl;
+            driveLink.target = '_blank';
+            driveLink.innerHTML = '<i class="fab fa-google-drive"></i> View on Google Drive';
+            driveContainer.style.display = 'block';
+            
+            console.log("Google Drive link set:", driveUrl);
+            
+        } else if (pdf.fileURL) {
+            // Set direct file link
+            driveLink.href = pdf.fileURL;
+            driveLink.target = '_blank';
+            driveLink.innerHTML = '<i class="fas fa-external-link-alt"></i> Open PDF File';
+            driveContainer.style.display = 'block';
+            
+        } else {
+            // Hide if no link available
+            driveContainer.style.display = 'none';
+            console.log("No link available for this PDF");
+        }
+    }
+    
+    // Set download button
+    const downloadBtn = document.getElementById('downloadPdfBtn');
+    if (downloadBtn) {
+        downloadBtn.onclick = function() {
+            downloadPDF(pdfId);
+            // Close modal after download
+            document.getElementById('pdfViewerModal').classList.remove('active');
+        };
+    }
+    
+    // Show modal
+    document.getElementById('pdfViewerModal').classList.add('active');
+}
+
+async function downloadPDF(pdfId) {
+    const pdf = pdfs.find(p => p.id === pdfId);
+    if (!pdf) {
+        alert('PDF not found.');
+        return;
+    }
+    
+    try {
+        // Increment download count
+        const newDownloads = (pdf.downloads || 0) + 1;
+        
+        // Update in Firebase
+        await database.ref('pdfs/' + pdfId).update({ 
+            downloads: newDownloads,
+            lastDownloaded: new Date().toISOString()
+        });
+        
+        // Open the PDF
+        if (pdf.type === 'drive' && pdf.driveLink) {
+            const driveUrl = pdf.driveLink.startsWith('http') 
+                ? pdf.driveLink 
+                : `https://drive.google.com/file/d/${pdf.driveLink}/view`;
+            
+            window.open(driveUrl, '_blank');
+            alert(`Opening "${pdf.name}" on Google Drive...`);
+            
+        } else if (pdf.fileURL) {
+            window.open(pdf.fileURL, '_blank');
+            alert(`Downloading "${pdf.name}"...`);
+            
+        } else {
+            alert(`PDF: ${pdf.name}\n\nNo direct download link available.`);
+        }
+        
+        // Update local data
+        pdf.downloads = newDownloads;
+        updateStats();
+        filterPdfs();
+        
+    } catch (error) {
+        console.error('Download error:', error);
+        alert('Failed to download PDF. Please try again.');
+    }
+}
+
 function updateStats() {
-    // Update total PDFs
     const totalPdfsElem = document.getElementById('totalPdfs');
-    if (totalPdfsElem) {
-        totalPdfsElem.textContent = pdfs.length;
-    }
+    if (totalPdfsElem) totalPdfsElem.textContent = pdfs.length;
     
-    // Update total categories
     const totalCategoriesElem = document.getElementById('totalCategories');
-    if (totalCategoriesElem) {
-        totalCategoriesElem.textContent = categories.length;
-    }
+    if (totalCategoriesElem) totalCategoriesElem.textContent = categories.length;
     
-    // Update total downloads
     const totalDownloadsElem = document.getElementById('totalDownloads');
     if (totalDownloadsElem) {
         let totalDownloads = 0;
@@ -289,70 +400,17 @@ function updateStats() {
     }
 }
 
-// Open PDF modal
-function openPDF(pdfId) {
-    const pdf = pdfs.find(p => p.id === pdfId);
-    if (!pdf) {
-        alert('PDF not found');
-        return;
-    }
-    
-    // Update modal content
-    document.getElementById('modalPdfTitle').textContent = pdf.name || 'PDF Document';
-    document.getElementById('viewingPdfName').textContent = pdf.name || 'PDF Document';
-    document.getElementById('pdfViewerMessage').textContent = pdf.description || 'No description available';
-    
-    // Set download link
-    const downloadBtn = document.getElementById('downloadPdfBtn');
-    downloadBtn.onclick = () => downloadPDF(pdfId);
-    
-    // Show modal
-    document.getElementById('pdfViewerModal').classList.add('active');
-}
-
-// Download PDF
-async function downloadPDF(pdfId) {
-    const pdf = pdfs.find(p => p.id === pdfId);
-    if (!pdf) {
-        alert('PDF not found');
-        return;
-    }
-    
-    try {
-        // Update download count
-        const newDownloads = (pdf.downloads || 0) + 1;
-        await database.ref('pdfs/' + pdfId).update({ 
-            downloads: newDownloads 
-        });
-        
-        // Open PDF link
-        if (pdf.driveLink) {
-            window.open(pdf.driveLink, '_blank');
-        } else if (pdf.fileURL) {
-            window.open(pdf.fileURL, '_blank');
-        } else {
-            alert(`PDF: ${pdf.name}\nLink not available`);
-        }
-        
-        // Update local data
-        pdf.downloads = newDownloads;
-        updateStats();
-        filterPdfs();
-        
-    } catch (error) {
-        console.error('Download error:', error);
-        alert('Failed to download PDF');
-    }
-}
-
-// Setup event listeners
-function setupEventListeners() {
-    console.log("Setting up event listeners...");
+// ==================== EVENT LISTENERS ====================
+function setupAllEventListeners() {
+    console.log("🔧 Setting up event listeners...");
     
     // Search input
     const searchInput = document.getElementById('searchInput');
     if (searchInput) {
-        searchInput.addEventListener('input', filterPdfs);
+        searchInput.addEventListener('input', () => {
+            currentPage = 1;
+            filterPdfs();
+        });
     }
     
     // Category dropdown
@@ -363,29 +421,31 @@ function setupEventListeners() {
     if (dropdownHeader && dropdown) {
         dropdownHeader.addEventListener('click', () => {
             dropdown.classList.toggle('active');
-            dropdownArrow.style.transform = dropdown.classList.contains('active') 
-                ? 'rotate(180deg)' 
-                : 'rotate(0deg)';
+            if (dropdownArrow) {
+                dropdownArrow.style.transform = dropdown.classList.contains('active') 
+                    ? 'rotate(180deg)' 
+                    : 'rotate(0deg)';
+            }
         });
         
         dropdown.addEventListener('click', (e) => {
             if (e.target.classList.contains('dropdown-item')) {
                 const category = e.target.getAttribute('data-category');
                 
-                // Update UI
+                // Update active state
                 document.querySelectorAll('.dropdown-item').forEach(item => {
                     item.classList.remove('active');
                 });
                 e.target.classList.add('active');
                 
-                // Update selected category text
-                const selectedCatText = document.getElementById('selectedCategory');
-                if (selectedCatText) {
+                // Update selected text
+                const selectedText = document.getElementById('selectedCategory');
+                if (selectedText) {
                     if (category === 'all') {
-                        selectedCatText.textContent = 'All Categories';
+                        selectedText.textContent = 'All Categories';
                     } else {
                         const cat = categories.find(c => c.id === category);
-                        selectedCatText.textContent = cat ? cat.name : 'All Categories';
+                        selectedText.textContent = cat ? cat.name : 'All Categories';
                     }
                 }
                 
@@ -396,7 +456,19 @@ function setupEventListeners() {
                 
                 // Close dropdown
                 dropdown.classList.remove('active');
-                dropdownArrow.style.transform = 'rotate(0deg)';
+                if (dropdownArrow) {
+                    dropdownArrow.style.transform = 'rotate(0deg)';
+                }
+            }
+        });
+        
+        // Close dropdown when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!dropdownHeader.contains(e.target) && !dropdown.contains(e.target)) {
+                dropdown.classList.remove('active');
+                if (dropdownArrow) {
+                    dropdownArrow.style.transform = 'rotate(0deg)';
+                }
             }
         });
     }
@@ -427,8 +499,6 @@ function setupEventListeners() {
     
     // Pagination buttons
     const prevBtn = document.getElementById('prevBtn');
-    const nextBtn = document.getElementById('nextBtn');
-    
     if (prevBtn) {
         prevBtn.addEventListener('click', () => {
             if (currentPage > 1) {
@@ -439,6 +509,7 @@ function setupEventListeners() {
         });
     }
     
+    const nextBtn = document.getElementById('nextBtn');
     if (nextBtn) {
         nextBtn.addEventListener('click', () => {
             const totalPages = Math.ceil(filteredPdfs.length / itemsPerPage);
@@ -451,9 +522,9 @@ function setupEventListeners() {
     }
     
     // Modal close button
-    const closeModal = document.getElementById('closeViewerModal');
-    if (closeModal) {
-        closeModal.addEventListener('click', () => {
+    const closeModalBtn = document.getElementById('closeViewerModal');
+    if (closeModalBtn) {
+        closeModalBtn.addEventListener('click', () => {
             document.getElementById('pdfViewerModal').classList.remove('active');
         });
     }
@@ -472,12 +543,25 @@ function setupEventListeners() {
     const printBtn = document.getElementById('printPdfBtn');
     if (printBtn) {
         printBtn.addEventListener('click', () => {
-            alert('Print functionality would be implemented here');
+            alert('Print feature will be implemented in the next update.');
+        });
+    }
+    
+    // Test Google Drive link
+    const driveLink = document.getElementById('driveViewLink');
+    if (driveLink) {
+        driveLink.addEventListener('click', function(e) {
+            if (!this.href || this.href === '#' || this.href.includes('undefined')) {
+                e.preventDefault();
+                alert('No valid link available for this PDF.');
+            } else {
+                console.log("Opening link:", this.href);
+                // Link will open normally in new tab
+            }
         });
     }
 }
 
-// Show error message
 function showError(message) {
     const container = document.getElementById('pdfIconGrid');
     if (container) {
@@ -494,95 +578,91 @@ function showError(message) {
     }
 }
 
-// Make functions available globally
-window.openPDF = openPDF;
+// ==================== GLOBAL FUNCTIONS ====================
+window.openPDFModal = openPDFModal;
 window.downloadPDF = downloadPDF;
 
-// Test Firebase connection
-window.testConnection = function() {
+// Test functions
+window.testFirebase = function() {
     console.log("Testing Firebase connection...");
     
     database.ref('.info/connected').once('value')
         .then(snapshot => {
             if (snapshot.val() === true) {
-                console.log("✅ Firebase connected!");
-                alert("Firebase is connected!");
+                console.log("✅ Firebase is connected!");
+                alert("Firebase connection is working!");
             } else {
-                console.log("❌ Firebase disconnected");
-                alert("Firebase is disconnected!");
+                console.log("❌ Firebase is not connected");
+                alert("Firebase is not connected.");
             }
         })
         .catch(error => {
-            console.error("❌ Connection test failed:", error);
-            alert("Connection test failed!");
+            console.error("Firebase test error:", error);
+            alert("Firebase test failed: " + error.message);
         });
 };
 
-// Add sample data function
-window.addSampleData = async function() {
+// Add sample data
+window.addSampleData = function() {
     console.log("Adding sample data...");
     
-    try {
-        // Add sample categories
-        const categoriesRef = database.ref('categories');
-        const sampleCategories = [
-            { name: "Technology", color: "blue" },
-            { name: "Business", color: "green" },
-            { name: "Education", color: "orange" },
-            { name: "Science", color: "purple" }
-        ];
-        
-        for (const cat of sampleCategories) {
-            await categoriesRef.push().set(cat);
+    // Sample categories
+    const categoriesData = {
+        "cat1": { name: "Technology", color: "blue" },
+        "cat2": { name: "Business", color: "green" },
+        "cat3": { name: "Education", color: "orange" },
+        "cat4": { name: "Science", color: "purple" }
+    };
+    
+    // Sample PDFs
+    const pdfsData = {
+        "pdf1": {
+            name: "Web Development Guide",
+            description: "Complete guide to modern web development",
+            categories: ["cat1", "cat3"],
+            type: "drive",
+            driveLink: "https://drive.google.com/file/d/1sQqP9ZQmQeDn7jK8lLmN9oP0qR1sT2uV/view",
+            size: "3.2 MB",
+            uploadDate: "2023-12-01",
+            downloads: 45
+        },
+        "pdf2": {
+            name: "Business Strategy Template",
+            description: "Professional business strategy templates",
+            categories: ["cat2"],
+            type: "file",
+            fileURL: "https://example.com/business-strategy.pdf",
+            size: "2.1 MB",
+            uploadDate: "2023-11-20",
+            downloads: 32
+        },
+        "pdf3": {
+            name: "Machine Learning Basics",
+            description: "Introduction to machine learning concepts",
+            categories: ["cat1", "cat4"],
+            type: "drive",
+            driveLink: "https://drive.google.com/file/d/2aB3cD4eF5gH6iJ7kL8mN9oP0qR1sT2uV/view",
+            size: "4.5 MB",
+            uploadDate: "2023-11-15",
+            downloads: 28
         }
-        
-        // Add sample PDFs
-        const pdfsRef = database.ref('pdfs');
-        const samplePDFs = [
-            {
-                name: "Introduction to Web Development",
-                description: "Learn HTML, CSS and JavaScript basics",
-                categories: ["-cat1", "-cat3"],
-                type: "drive",
-                driveLink: "https://drive.google.com/file/d/1/view",
-                size: "2.5 MB",
-                uploadDate: "2023-12-01",
-                downloads: 25
-            },
-            {
-                name: "Business Plan Template",
-                description: "Complete business plan template",
-                categories: ["-cat2"],
-                type: "file",
-                fileURL: "https://example.com/business-plan.pdf",
-                size: "1.8 MB",
-                uploadDate: "2023-11-15",
-                downloads: 42
-            },
-            {
-                name: "Python Programming Guide",
-                description: "Python programming for beginners",
-                categories: ["-cat1", "-cat3"],
-                type: "drive",
-                driveLink: "https://drive.google.com/file/d/2/view",
-                size: "3.2 MB",
-                uploadDate: "2023-11-20",
-                downloads: 18
-            }
-        ];
-        
-        for (const pdf of samplePDFs) {
-            await pdfsRef.push().set(pdf);
-        }
-        
-        console.log("✅ Sample data added successfully!");
-        alert("Sample data added! Refresh to see changes.");
-        
-    } catch (error) {
-        console.error("❌ Error adding sample data:", error);
-        alert("Failed to add sample data: " + error.message);
-    }
+    };
+    
+    // Add categories
+    database.ref('categories').set(categoriesData)
+        .then(() => {
+            console.log("✅ Categories added");
+            // Add PDFs
+            return database.ref('pdfs').set(pdfsData);
+        })
+        .then(() => {
+            console.log("✅ PDFs added");
+            alert("Sample data added successfully! Refresh the page to see changes.");
+        })
+        .catch(error => {
+            console.error("❌ Error adding sample data:", error);
+            alert("Failed to add sample data: " + error.message);
+        });
 };
 
-// Initialize when page loads
-console.log("Script loaded successfully!");
+console.log("🎯 PDF Library Viewer script loaded!");
