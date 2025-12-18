@@ -1,4 +1,25 @@
 // ==================== EVENT LISTENERS ====================
+// ==================== FIREBASE CONFIGURATION ====================
+const firebaseConfig = {
+    apiKey: "AIzaSyDm-pq9lsbn5KASjtbeOrdIdyXdc9WgRoQ",
+    authDomain: "rds-library.firebaseapp.com",
+    databaseURL: "https://rds-library-default-rtdb.firebaseio.com",
+    projectId: "rds-library",
+    storageBucket: "rds-library.firebasestorage.app",
+    messagingSenderId: "1043493423342",
+    appId: "1:1043493423342:web:d4675d2a7c35fe21798bff",
+    measurementId: "G-7C712Z0WJ9"
+};
+
+// Initialize Firebase
+try {
+    firebase.initializeApp(firebaseConfig);
+    console.log("Firebase initialized successfully!");
+} catch (error) {
+    console.error("Firebase initialization error:", error);
+}
+
+const database = firebase.database();
 function setupEventListeners() {
     // Search input
     const searchInput = document.getElementById('searchInput');
