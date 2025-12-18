@@ -7,9 +7,6 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
-    <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 </head>
 <body>
     <header>
@@ -55,12 +52,11 @@
                 </div>
                 <div class="dropdown-content" id="categoriesDropdown">
                     <div class="dropdown-item active" data-category="all">All Categories</div>
-                    <!-- Categories will be loaded here -->
                 </div>
             </div>
         </div>
 
-        <!-- PDF Icon Grid (3 columns x 5 rows) -->
+        <!-- PDF Grid -->
         <div class="pdf-icon-grid" id="pdfIconGrid">
             <div class="loading">
                 <div class="loading-spinner"></div>
@@ -69,19 +65,14 @@
             </div>
         </div>
 
-        <!-- PDF List View (Hidden by default) -->
-        <div class="pdf-list-view" id="pdfListView" style="display: none;">
-            <!-- List view will be loaded here -->
-        </div>
-
         <!-- Pagination -->
-        <div class="pagination" id="pagination" style="display: none;">
+        <div class="pagination" id="pagination">
             <button class="pagination-btn" id="prevBtn"><i class="fas fa-chevron-left"></i> Previous</button>
             <div class="page-numbers" id="pageNumbers"></div>
             <button class="pagination-btn" id="nextBtn">Next <i class="fas fa-chevron-right"></i></button>
         </div>
 
-        <!-- Statistics Cards (At the bottom) -->
+        <!-- Statistics Cards -->
         <div class="stats-section">
             <div class="stats-bar">
                 <div class="stat-card">
@@ -115,14 +106,14 @@
                     <i class="fas fa-file-pdf"></i>
                     <h3 id="viewingPdfName">Document Preview</h3>
                     <p id="pdfViewerMessage">Loading PDF information...</p>
-                    <div class="drive-embed-container" id="driveEmbedContainer" style="display: none;">
+                    <div class="drive-embed-container" id="driveEmbedContainer">
                         <p>This PDF is hosted on Google Drive. Click the button below to view it directly.</p>
                         <a href="#" id="driveViewLink" target="_blank" class="btn btn-google">
                             <i class="fab fa-google-drive"></i> View on Google Drive
                         </a>
                     </div>
                 </div>
-                <div style="display: flex; gap: 15px; justify-content: center; margin-top: 25px;">
+                <div class="modal-actions">
                     <button class="btn btn-primary" id="downloadPdfBtn">
                         <i class="fas fa-download"></i> Download PDF
                     </button>
@@ -143,6 +134,11 @@
         </div>
     </footer>
 
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    
+    <!-- Main JavaScript -->
     <script src="script.js"></script>
 </body>
 </html>
