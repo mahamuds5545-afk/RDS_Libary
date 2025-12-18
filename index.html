@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF Library Viewer - Public Access</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">
+                    <i class="fas fa-book-open"></i>
+                    <h1>PDF Library Viewer</h1>
+                </div>
+                <div class="viewer-info">
+                    <i class="fas fa-globe-americas"></i>
+                    <span>Public Access - No Login Required</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="container">
+        <!-- Search Section -->
+        <div class="search-section">
+            <div class="search-box">
+                <i class="fas fa-search"></i>
+                <input type="text" id="searchInput" placeholder="Search PDFs by name, description, or category...">
+            </div>
+        </div>
+
+        <!-- Statistics -->
+        <div class="stats-bar">
+            <div class="stat-card">
+                <i class="fas fa-file-pdf"></i>
+                <h3 id="totalPdfs">0</h3>
+                <p>Total PDFs</p>
+            </div>
+            <div class="stat-card">
+                <i class="fas fa-tags"></i>
+                <h3 id="totalCategories">0</h3>
+                <p>Categories</p>
+            </div>
+            <div class="stat-card">
+                <i class="fas fa-download"></i>
+                <h3 id="totalDownloads">0</h3>
+                <p>Total Downloads</p>
+            </div>
+        </div>
+
+        <!-- Categories Dropdown -->
+        <div class="categories-dropdown-section">
+            <div class="dropdown-wrapper">
+                <div class="dropdown-header" id="dropdownHeader">
+                    <i class="fas fa-filter"></i>
+                    <span id="selectedCategory">All Categories</span>
+                    <i class="fas fa-chevron-down" id="dropdownArrow"></i>
+                </div>
+                <div class="dropdown-content" id="categoriesDropdown">
+                    <div class="dropdown-item" data-category="all">All Categories</div>
+                    <!-- Categories will be loaded here -->
+                </div>
+            </div>
+            <button class="btn btn-primary" id="gridViewBtn" title="Grid View">
+                <i class="fas fa-th-large"></i>
+            </button>
+            <button class="btn btn-primary" id="listViewBtn" title="List View">
+                <i class="fas fa-list"></i>
+            </button>
+        </div>
+
+        <!-- PDF Grid (Icon View - 3 columns x 5 rows) -->
+        <div class="pdf-icon-grid" id="pdfIconGrid">
+            <div class="loading">
+                <div class="loading-spinner"></div>
+                <h3>Loading PDF Library...</h3>
+                <p>Please wait while we load the documents</p>
+            </div>
+        </div>
+
+        <!-- PDF List View (Hidden by default) -->
+        <div class="pdf-list-view" id="pdfListView" style="display: none;">
+            <!-- List view will be loaded here -->
+        </div>
+
+        <!-- Pagination -->
+        <div class="pagination" id="pagination" style="display: none;">
+            <button class="pagination-btn" id="prevBtn"><i class="fas fa-chevron-left"></i> Previous</button>
+            <div class="page-numbers" id="pageNumbers"></div>
+            <button class="pagination-btn" id="nextBtn">Next <i class="fas fa-chevron-right"></i></button>
+        </div>
+    </div>
+
+    <!-- PDF Viewer Modal -->
+    <div class="modal" id="pdfViewerModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalPdfTitle">PDF Document</h3>
+                <button class="close-modal" id="closeViewerModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="pdf-preview">
+                    <i class="fas fa-file-pdf"></i>
+                    <h3 id="viewingPdfName">Document Preview</h3>
+                    <p id="pdfViewerMessage">Loading PDF information...</p>
+                    <div class="drive-embed-container" id="driveEmbedContainer" style="display: none;">
+                        <p>This PDF is hosted on Google Drive. Click the button below to view it directly.</p>
+                        <a href="#" id="driveViewLink" target="_blank" class="btn btn-google">
+                            <i class="fab fa-google-drive"></i> View on Google Drive
+                        </a>
+                    </div>
+                </div>
+                <div style="display: flex; gap: 15px; justify-content: center; margin-top: 25px;">
+                    <button class="btn btn-primary" id="downloadPdfBtn">
+                        <i class="fas fa-download"></i> Download PDF
+                    </button>
+                    <button class="btn btn-success" id="printPdfBtn">
+                        <i class="fas fa-print"></i> Print
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <div class="container">
+            <p>PDF Library Viewer &copy; 2023 | Public Access Platform</p>
+            <p style="font-size: 14px; margin-top: 10px; color: #999;">
+                This viewer provides free access to the PDF library without requiring any login.
+            </p>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>
