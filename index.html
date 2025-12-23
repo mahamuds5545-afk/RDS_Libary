@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RDS Library - Public Access</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">
+                    <i class="fas fa-book-open"></i>
+                    <h1>RDS Library</h1>
+                </div>
+                <div class="header-right">
+                    <div class="current-time">
+                        <i class="fas fa-clock"></i>
+                        <span id="currentTime">Loading...</span>
+                    </div>
+                    <div class="viewer-info">
+                        <i class="fas fa-globe-americas"></i>
+                        <span>created by Mahamud</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="container">
+        <!-- Notice Board -->
+        <div class="notice-board">
+            <div class="notice-header">
+                <i class="fas fa-bullhorn"></i>
+                <h3>Latest Updates</h3>
+            </div>
+            <div class="notice-content">
+                <div class="notice-item">
+                    <i class="fas fa-info-circle"></i>
+                    <p>Library now has <strong>${pdfs.length} PDFs</strong> across <strong>${categories.length} categories</strong></p>
+                </div>
+                <div class="notice-item">
+                    <i class="fas fa-star"></i>
+                    <p>New feature: You can now comment on PDFs and like them!</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Search Section -->
+        <div class="search-section">
+            <div class="search-box">
+                <i class="fas fa-search"></i>
+                <input type="text" id="searchInput" placeholder="Search PDFs by name, description, or category...">
+                <button class="btn btn-primary" id="clearSearch">
+                    <i class="fas fa-times"></i> Clear
+                </button>
+            </div>
+        </div>
+
+        <!-- View Controls -->
+        <div class="view-controls">
+            <div class="view-left">
+                <div class="view-toggle">
+                    <button class="view-btn active" id="gridViewBtn" title="Grid View">
+                        <i class="fas fa-th-large"></i>
+                    </button>
+                    <button class="view-btn" id="listViewBtn" title="List View">
+                        <i class="fas fa-list"></i>
+                    </button>
+                </div>
+                
+                <div class="sort-dropdown">
+                    <select id="sortSelect">
+                        <option value="newest">Latest First</option>
+                        <option value="oldest">Oldest First</option>
+                        <option value="name">A to Z</option>
+                        <option value="downloads">Most Downloads</option>
+                        <option value="likes">Most Likes</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="dropdown-wrapper">
+                <div class="dropdown-header" id="dropdownHeader">
+                    <i class="fas fa-filter"></i>
+                    <span id="selectedCategory">All Categories</span>
+                    <i class="fas fa-chevron-down" id="dropdownArrow"></i>
+                </div>
+                <div class="dropdown-content" id="categoriesDropdown">
+                    <div class="dropdown-item active" data-category="all">All Categories</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- PDF Grid -->
+        <div class="pdf-icon-grid" id="pdfIconGrid">
+            <div class="loading">
+                <div class="loading-spinner"></div>
+                <h3>Loading PDF Library...</h3>
+                <p>Please wait while we load the documents</p>
+            </div>
+        </div>
+
+        <!-- Pagination -->
+        <div class="pagination" id="pagination">
+            <button class="pagination-btn" id="prevBtn"><i class="fas fa-chevron-left"></i> Previous</button>
+            <div class="page-numbers" id="pageNumbers"></div>
+            <button class="pagination-btn" id="nextBtn">Next <i class="fas fa-chevron-right"></i></button>
+        </div>
+
+        <!-- Statistics Cards -->
+        <div class="stats-section">
+            <div class="stats-bar">
+                <div class="stat-card">
+                    <i class="fas fa-file-pdf"></i>
+                    <h3 id="totalPdfs">0</h3>
+                    <p>Total PDFs</p>
+                </div>
+                <div class="stat-card">
+                    <i class="fas fa-tags"></i>
+                    <h3 id="totalCategories">0</h3>
+                    <p>Categories</p>
+                </div>
+                <div class="stat-card">
+                    <i class="fas fa-download"></i>
+                    <h3 id="totalDownloads">0</h3>
+                    <p>Total Downloads</p>
+                </div>
+                <div class="stat-card">
+                    <i class="fas fa-heart"></i>
+                    <h3 id="totalLikes">0</h3>
+                    <p>Total Likes</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- PDF Viewer Modal -->
+    <div class="modal" id="pdfViewerModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalPdfTitle">PDF Document</h3>
+                <button class="close-modal" id="closeViewerModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="pdf-preview">
+                    <i class="fas fa-file-pdf"></i>
+                    <h3 id="viewingPdfName">Document Preview</h3>
+                    <p id="pdfViewerMessage">Loading PDF information...</p>
+                    
+                    <!-- PDF Stats -->
+                    <div class="pdf-stats">
+                        <div class="pdf-stat-item">
+                            <i class="fas fa-download"></i>
+                            <span id="modalDownloads">0</span>
+                        </div>
+                        <div class="pdf-stat-item">
+                            <i class="fas fa-heart"></i>
+                            <span id="modalLikes">0</span>
+                        </div>
+                        <div class="pdf-stat-item">
+                            <i class="fas fa-comment"></i>
+                            <span id="modalComments">0</span>
+                        </div>
+                    </div>
+                    
+                    <div class="drive-embed-container" id="driveEmbedContainer">
+                        <p>This PDF is hosted on Google Drive. Click the button below to view it directly.</p>
+                        <a href="#" id="driveViewLink" target="_blank" class="btn btn-google">
+                            <i class="fab fa-google-drive"></i> View on Google Drive
+                        </a>
+                    </div>
+                </div>
+                
+                <!-- Like Button -->
+                <div class="like-section">
+                    <button class="btn-like" id="likePdfBtn">
+                        <i class="far fa-heart"></i>
+                        <span>Like</span>
+                        <span class="like-count" id="likeCount">0</span>
+                    </button>
+                </div>
+                
+                <!-- Modal Actions -->
+                <div class="modal-actions">
+                    <button class="btn btn-primary" id="downloadPdfBtn">
+                        <i class="fas fa-download"></i> Download PDF
+                    </button>
+                    <button class="btn btn-success" id="printPdfBtn">
+                        <i class="fas fa-print"></i> Print
+                    </button>
+                    <button class="btn btn-info" id="sharePdfBtn">
+                        <i class="fas fa-share-alt"></i> Share
+                    </button>
+                </div>
+                
+                <!-- Comments Section -->
+                <div class="comments-section">
+                    <h4><i class="fas fa-comments"></i> Comments</h4>
+                    <div class="comment-form">
+                        <input type="text" id="commentInput" placeholder="Add a comment...">
+                        <button class="btn btn-primary" id="submitComment">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </div>
+                    <div class="comments-list" id="commentsList">
+                        <div class="comment-item">
+                            <div class="comment-avatar">
+                                <i class="fas fa-user-circle"></i>
+                            </div>
+                            <div class="comment-content">
+                                <div class="comment-author">Library User</div>
+                                <div class="comment-text">Great resource! Thanks for sharing.</div>
+                                <div class="comment-time">2 hours ago</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions Bar -->
+    <div class="quick-actions">
+        <button class="quick-action-btn" id="scrollTopBtn" title="Scroll to top">
+            <i class="fas fa-arrow-up"></i>
+        </button>
+        <button class="quick-action-btn" id="refreshBtn" title="Refresh library">
+            <i class="fas fa-redo"></i>
+        </button>
+        <button class="quick-action-btn" id="darkModeToggle" title="Toggle dark mode">
+            <i class="fas fa-moon"></i>
+        </button>
+    </div>
+
+    <footer>
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h4>RDS Library</h4>
+                    <p>Free PDF library with public access</p>
+                    <div class="social-links">
+                        <a href="#"><i class="fab fa-facebook"></i></a>
+                        <a href="#"><i class="fab fa-twitter"></i></a>
+                        <a href="#"><i class="fab fa-github"></i></a>
+                    </div>
+                </div>
+                <div class="footer-section">
+                    <h4>Quick Links</h4>
+                    <ul>
+                        <li><a href="#" id="viewAllPdfs">View All PDFs</a></li>
+                        <li><a href="#" id="viewPopular">Most Popular</a></li>
+                        <li><a href="#" id="viewNew">New Arrivals</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>PDF Library Viewer &copy; 2023 | Public Access Platform</p>
+                <p style="font-size: 14px; margin-top: 10px; color: #999;">
+                    <i class="fas fa-users"></i> <span id="onlineUsers">1</span> user(s) online
+                </p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    
+    <!-- Main JavaScript -->
+    <script src="script.js"></script>
+</body>
+</html>
