@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>MRDS Ultimate v6.2 - Updated</title>
+    <title>MRDS Ultimate v6.2 - PDF Library Updated</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
@@ -16,123 +16,173 @@
             --border: #e5e7eb; --radius: 12px;
             --shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
         }
+
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; -webkit-tap-highlight-color: transparent; }
-        body { background: var(--bg); color: var(--text); line-height: 1.5; padding-bottom: 80px; }
-        .card { background: var(--surface); padding: 1.5rem; border-radius: var(--radius); box-shadow: var(--shadow); margin-bottom: 1rem; }
-        .btn { background: var(--primary); color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 8px; font-weight: 600; cursor: pointer; width: 100%; }
-        .btn:disabled { background: var(--text-light); }
-        input, select { width: 100%; padding: 0.75rem; border: 1px solid var(--border); border-radius: 8px; margin-bottom: 1rem; outline: none; }
-        .hidden { display: none; }
-        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        .container { max-width: 600px; margin: auto; padding: 15px; }
+        body { background: var(--bg); color: var(--text); padding-bottom: 80px; font-size: 15px; }
+
+        .hidden { display: none !important; }
+        .flex { display: flex; align-items: center; }
+        .flex-between { justify-content: space-between; }
+        .card { background: var(--surface); padding: 16px; border-radius: var(--radius); box-shadow: var(--shadow); margin-bottom: 12px; border: 1px solid var(--border); }
+        
+        .btn {
+            background: var(--primary); color: white; border: none; padding: 12px; border-radius: 8px;
+            font-weight: 600; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 8px; width: 100%;
+        }
+        .btn-sm { padding: 6px 12px; font-size: 0.8rem; width: auto; }
+        
+        input, select { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; background: #f9fafb; margin-bottom: 10px; outline: none; }
+        
+        /* Navbar & Nav */
+        .navbar { position: sticky; top: 0; background: var(--surface); padding: 10px 16px; border-bottom: 1px solid var(--border); z-index: 100; display: flex; justify-content: space-between; }
+        .bottom-nav { position: fixed; bottom: 0; left: 0; width: 100%; background: var(--surface); border-top: 1px solid var(--border); display: flex; justify-content: space-around; padding: 10px 0; z-index: 1000; }
+        .nav-item { background: none; border: none; color: var(--text-light); font-size: 0.75rem; display: flex; flex-direction: column; align-items: center; cursor: pointer; }
+        .nav-item.active { color: var(--primary); font-weight: bold; }
+
+        /* PDF List Styling */
+        .pdf-card { display: flex; align-items: center; gap: 12px; }
+        .pdf-icon { width: 45px; height: 45px; background: #fee2e2; color: #ef4444; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <div id="adm-lib" class="card">
-        <h4><i class="fas fa-book"></i> লাইব্রেরি (PDF যোগ করুন)</h4>
-        <br>
-        <input type="text" id="libTitle" placeholder="বই বা নোটের নাম">
-        
-        <label style="font-size: 12px; color: var(--text-light);">PDF লিঙ্ক অথবা ফাইল ব্যবহার করুন:</label>
-        <input type="text" id="libLink" placeholder="Google Drive/Direct PDF Link">
-        
-        <select id="libType">
-            <option value="PDF">PDF Document</option>
-            <option value="Video">Video Lesson</option>
-        </select>
-        
-        <button class="btn" id="btnLibAdd" onclick="admAddLib()">Save to Database</button>
-    </div>
+    <nav class="navbar">
+        <div style="font-weight: 800; color: var(--primary); font-size: 1.2rem;">MRDS v6.2</div>
+        <div id="userStatus" class="flex gap-2">
+            <span id="navBal" style="font-weight: bold; color: #10b981;">৳0</span>
+        </div>
+    </nav>
 
-    <hr style="margin: 20px 0;">
+    <div class="p-4">
+        <div id="view-library" class="view">
+            <h4 class="mb-2"><i class="fas fa-book"></i> স্টাডি লাইব্রেরি (PDF)</h4>
+            <div id="libList">
+                </div>
+        </div>
 
-    <div id="user-lib">
-        <h4>আপনার লাইব্রেরি</h4>
-        <div id="libList" style="margin-top: 15px;"></div>
-    </div>
-</div>
-
-<script>
-    // --- Admin Function: Add PDF ---
-    async function admAddLib() {
-        const title = document.getElementById('libTitle').value;
-        const link = document.getElementById('libLink').value;
-        const type = document.getElementById('libType').value;
-        const btn = document.getElementById('btnLibAdd');
-
-        if (!title || !link) {
-            alert("দয়া করে শিরোনাম এবং লিঙ্ক দুটোই দিন।");
-            return;
-        }
-
-        btn.disabled = true;
-        btn.innerText = "সংরক্ষণ হচ্ছে...";
-
-        try {
-            await db.ref('library').push({
-                title: title,
-                link: link,
-                type: type,
-                timestamp: Date.now()
-            });
-            alert("সফলভাবে লাইব্রেরিতে যুক্ত হয়েছে!");
-            document.getElementById('libTitle').value = '';
-            document.getElementById('libLink').value = '';
-        } catch (error) {
-            alert("ভুল হয়েছে: " + error.message);
-        } finally {
-            btn.disabled = false;
-            btn.innerText = "Save to Database";
-        }
-    }
-
-    // --- User Function: Fetch & Show PDF List ---
-    function fetchLibrary() {
-        db.ref('library').on('value', (snapshot) => {
-            const listDiv = document.getElementById('libList');
-            listDiv.innerHTML = '';
-            
-            snapshot.forEach((child) => {
-                const data = child.val();
-                const item = document.createElement('div');
-                item.className = 'card';
-                item.style.padding = '10px';
+        <div id="view-admin" class="view hidden">
+            <div class="card">
+                <h4><i class="fas fa-plus-circle"></i> নতুন PDF/লিঙ্ক যোগ করুন</h4>
+                <br>
+                <input type="text" id="libTitle" placeholder="ফাইলের নাম (যেমন: পদার্থবিজ্ঞান ১ম পত্র)">
                 
-                // PDF দেখার বাটন তৈরি
-                item.innerHTML = `
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <div>
-                            <strong>${data.title}</strong><br>
-                            <small style="color: grey;">Type: ${data.type}</small>
-                        </div>
-                        <button class="btn" style="width: auto; padding: 5px 15px;" 
-                                onclick="openPDF('${data.link}')">
-                            <i class="fas fa-file-pdf"></i> দেখুন
-                        </button>
-                    </div>
-                `;
-                listDiv.prepend(item);
-            });
-        });
-    }
+                <label class="text-xs">সরাসরি লিঙ্ক (Google Drive/Mediafire)</label>
+                <input type="text" id="libLink" placeholder="https://drive.google.com/...">
+                
+                <label class="text-xs">অথবা ফাইল আপলোড করুন (PDF)</label>
+                <input type="file" id="libFile" accept="application/pdf">
+                
+                <select id="libType">
+                    <option value="PDF">PDF Document</option>
+                    <option value="Video">Video Lesson</option>
+                    <option value="Note">Hand Note</option>
+                </select>
+                
+                <button class="btn" id="btnLibAdd" onclick="admAddLib()">Save to Database</button>
+            </div>
+        </div>
+    </div>
 
-    // PDF খোলার ফাংশন
-    function openPDF(url) {
-        if (!url) return;
-        // যদি গুগল ড্রাইভের লিঙ্ক হয় তবে এটি সরাসরি প্রিভিউ মোডে ওপেন হবে
-        let finalUrl = url;
-        if (url.includes('drive.google.com')) {
-            finalUrl = url.replace('/view', '/preview');
+    <div class="bottom-nav">
+        <div class="nav-item active" onclick="showSec('view-library')"><i class="fas fa-book"></i><span>Library</span></div>
+        <div class="nav-item" onclick="showSec('view-admin')"><i class="fas fa-user-shield"></i><span>Admin</span></div>
+    </div>
+
+    <script>
+
+        // --- Admin: Save Data ---
+        async function admAddLib() {
+            const title = document.getElementById('libTitle').value;
+            const link = document.getElementById('libLink').value;
+            const type = document.getElementById('libType').value;
+            const fileInput = document.getElementById('libFile');
+            const btn = document.getElementById('btnLibAdd');
+
+            if (!title) return alert("ফাইলের নাম দিন");
+
+            let finalLink = link;
+
+            // যদি ফাইল আপলোড করা হয় (নোট: ফায়ারবেস স্টোরেজ সেটআপ থাকতে হবে)
+            // আপাতত আমরা লিঙ্ক সিস্টেমকেই প্রাধান্য দিচ্ছি সহজ করার জন্য
+            if (!finalLink && !fileInput.files[0]) {
+                return alert("লিঙ্ক দিন অথবা ফাইল সিলেক্ট করুন");
+            }
+
+            btn.disabled = true;
+            btn.innerText = "Saving...";
+
+            try {
+                await db.ref('library').push({
+                    title: title,
+                    link: finalLink,
+                    type: type,
+                    timestamp: Date.now()
+                });
+                alert("সফলভাবে যুক্ত হয়েছে!");
+                document.getElementById('libTitle').value = '';
+                document.getElementById('libLink').value = '';
+                fileInput.value = '';
+            } catch (e) {
+                alert("ভুল হয়েছে: " + e.message);
+            } finally {
+                btn.disabled = false;
+                btn.innerText = "Save to Database";
+            }
         }
-        window.open(finalUrl, '_blank');
-    }
 
-    // পেজ লোড হলে লাইব্রেরি ডেটা আনুন
-    fetchLibrary();
+        // --- User: Load Library ---
+        function loadLibrary() {
+            db.ref('library').on('value', (snapshot) => {
+                const listDiv = document.getElementById('libList');
+                listDiv.innerHTML = '';
+                
+                if (!snapshot.exists()) {
+                    listDiv.innerHTML = '<p style="text-align:center; color:gray;">কোন ফাইল পাওয়া যায়নি।</p>';
+                    return;
+                }
 
-</script>
+                snapshot.forEach((child) => {
+                    const data = child.val();
+                    const item = document.createElement('div');
+                    item.className = 'card pdf-card';
+                    
+                    item.innerHTML = `
+                        <div class="pdf-icon">
+                            <i class="fas ${data.type === 'Video' ? 'fa-play-circle' : 'fa-file-pdf'}"></i>
+                        </div>
+                        <div style="flex:1">
+                            <h4 style="margin:0; font-size:14px;">${data.title}</h4>
+                            <small style="color:var(--text-light)">${data.type}</small>
+                        </div>
+                        <button class="btn btn-sm" onclick="openFile('${data.link}')">দেখুন</button>
+                    `;
+                    listDiv.prepend(item);
+                });
+            });
+        }
+
+        function openFile(url) {
+            if (!url) return alert("লিঙ্ক পাওয়া যায়নি");
+            // Google Drive লিঙ্ক হলে প্রিভিউ মোডে ওপেন করবে
+            let finalUrl = url;
+            if (url.includes('drive.google.com')) {
+                finalUrl = url.replace('/view', '/preview');
+            }
+            window.open(finalUrl, '_blank');
+        }
+
+        function showSec(id) {
+            document.querySelectorAll('.view').forEach(v => v.classList.add('hidden'));
+            document.getElementById(id).classList.remove('hidden');
+            
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            event.currentTarget.classList.add('active');
+        }
+
+        // ইনিশিয়াল লোড
+        loadLibrary();
+
+    </script>
     <script src="script.js"></script>
 </body>
 </html>
