@@ -1,572 +1,167 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="bn">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PDF Library Management - Admin</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>MRDS Ultimate v6.2 - Auto Login</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
-        import { getAuth, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
-        import { getDatabase, ref, set, push, onValue, remove, update } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
-        import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-storage.js";
-
-        const firebaseConfig = {
-           apiKey: "AIzaSyBPAujSIQnIdXOhAGV1zwafvFiZr6z5u0Y",
-  authDomain: "rds-library-3a1b0.firebaseapp.com",
-    databaseURL: "https://rds-library-3a1b0-default-rtdb.firebaseio.com/",
-    projectId: "rds-library-3a1b0",
-  storageBucket: "rds-library-3a1b0.firebasestorage.app",
-  messagingSenderId: "258223710686",
-  appId: "1:258223710686:web:68872b10e298741b7dbd4f",
-  measurementId: "G-1KTQSJGBP6"
-        };
-
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const database = getDatabase(app);
-        const storage = getStorage(app);
-
-        window.firebase = { auth, database, storage, ref, set, push, onValue, remove, update, storageRef, uploadBytes, getDownloadURL, signOut };
-    </script>
+    
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+    
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
-        body { background-color: #f5f7fa; color: #333; line-height: 1.6; }
-        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
-        header { background: linear-gradient(135deg, #2c3e50, #4a6491); color: white; padding: 20px 0; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
-        .header-content { display: flex; justify-content: space-between; align-items: center; padding: 0 20px; }
-        .logo { display: flex; align-items: center; gap: 10px; }
-        .logo i { font-size: 28px; color: #4fc3f7; }
-        .logo h1 { font-size: 24px; font-weight: 600; }
-        .user-info { display: flex; align-items: center; gap: 15px; }
-        .logout-btn { background: rgba(255,255,255,0.2); border: none; color: white; padding: 8px 15px; border-radius: 5px; cursor: pointer; }
-        .nav-tabs { display: flex; gap: 5px; background: rgba(255,255,255,0.1); border-radius: 30px; padding: 5px; margin-top: 15px; }
-        .tab-btn { background: transparent; border: none; color: white; padding: 10px 20px; border-radius: 25px; cursor: pointer; }
-        .tab-btn.active { background: #4fc3f7; color: #2c3e50; }
-        .main-content { display: flex; gap: 30px; margin-top: 30px; }
-        .app-container { flex: 1; background: white; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.08); padding: 25px; display: none; }
-        .app-container.active { display: block; }
-        .app-title { color: #2c3e50; margin-bottom: 25px; padding-bottom: 15px; border-bottom: 2px solid #f0f0f0; display: flex; align-items: center; gap: 10px; }
-        .app-title i { color: #4fc3f7; }
-        .login-container { max-width: 400px; margin: 100px auto; background: white; border-radius: 15px; padding: 40px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); text-align: center; }
-        .login-icon { font-size: 60px; color: #4fc3f7; margin-bottom: 20px; }
-        .login-title { color: #2c3e50; margin-bottom: 30px; font-size: 28px; }
-        .login-form input { width: 100%; padding: 12px 15px; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; margin-bottom: 20px; }
-        .login-btn { width: 100%; padding: 14px; background: #4fc3f7; color: white; border: none; border-radius: 8px; font-size: 16px; cursor: pointer; }
-        .login-error { color: #ff6b6b; margin-top: 10px; display: none; }
-        .upload-tabs { display: flex; border-bottom: 1px solid #eee; margin-bottom: 20px; }
-        .upload-tab { padding: 10px 20px; background: none; border: none; border-bottom: 3px solid transparent; cursor: pointer; }
-        .upload-tab.active { color: #4fc3f7; border-bottom-color: #4fc3f7; }
-        .upload-area { border: 3px dashed #ddd; border-radius: 10px; padding: 40px 20px; text-align: center; margin-bottom: 30px; cursor: pointer; }
-        .upload-area:hover { border-color: #4fc3f7; background-color: #f9fdff; }
-        .admin-sections { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-top: 30px; }
-        @media (max-width: 992px) { .admin-sections { grid-template-columns: 1fr; } }
-        .section-card { background: white; border-radius: 10px; padding: 20px; box-shadow: 0 3px 10px rgba(0,0,0,0.05); border: 1px solid #eee; }
-        .pdf-list { margin-top: 20px; max-height: 400px; overflow-y: auto; }
-        .pdf-item { display: flex; align-items: center; padding: 15px; border-bottom: 1px solid #eee; }
-        .pdf-icon { background: #e3f2fd; width: 50px; height: 50px; border-radius: 8px; display: flex; align-items: center; justify-content: center; margin-right: 15px; }
-        .pdf-icon i { color: #f44336; font-size: 24px; }
-        .pdf-info { flex: 1; min-width: 0; }
-        .pdf-info h4 { margin-bottom: 5px; color: #333; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .pdf-info p { color: #777; font-size: 14px; }
-        .pdf-categories { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 8px; }
-        .category-tag { background: #e8f5e9; color: #2e7d32; padding: 3px 10px; border-radius: 20px; font-size: 12px; }
-        .category-tag.technology { background: #e3f2fd; color: #1565c0; }
-        .category-tag.business { background: #f3e5f5; color: #7b1fa2; }
-        .category-tag.academic { background: #fff3e0; color: #ef6c00; }
-        .category-tag.literature { background: #e8f5e9; color: #2e7d32; }
-        .category-tag.science { background: #fce4ec; color: #c2185b; }
-        .category-tag.history { background: #fff8e1; color: #ff8f00; }
-        .pdf-actions { display: flex; gap: 10px; }
-        .btn { padding: 8px 15px; border: none; border-radius: 5px; cursor: pointer; font-weight: 500; display: flex; align-items: center; gap: 5px; }
-        .btn-primary { background: #4fc3f7; color: white; }
-        .btn-danger { background: #ff6b6b; color: white; }
-        .btn-success { background: #66bb6a; color: white; }
-        .btn-warning { background: #ffa726; color: white; }
-        .btn-google { background: #4285F4; color: white; }
-        .form-group { margin-bottom: 20px; }
-        .form-control { width: 100%; padding: 12px 15px; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; }
-        .category-list { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px; }
-        .category-item { background: #f0f7ff; padding: 10px 15px; border-radius: 30px; display: flex; align-items: center; gap: 8px; }
-        .category-actions { display: flex; gap: 5px; }
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; align-items: center; justify-content: center; }
-        .modal.active { display: flex; }
-        .modal-content { background: white; border-radius: 10px; width: 90%; max-width: 900px; max-height: 90vh; overflow: hidden; }
-        .modal-header { background: #2c3e50; color: white; padding: 20px; display: flex; justify-content: space-between; align-items: center; }
-        .modal-body { padding: 30px; flex: 1; overflow-y: auto; }
-        .close-modal { background: none; border: none; color: white; font-size: 24px; cursor: pointer; }
-        .drive-link-preview { background: #f0f7ff; border-radius: 8px; padding: 15px; margin-top: 15px; display: none; }
-        .drive-link-preview.active { display: block; }
-        footer { text-align: center; margin-top: 50px; padding: 20px; color: #777; border-top: 1px solid #eee; }
+        /* --- THEME & CSS (পূর্বের মতই রাখা হয়েছে) --- */
+        :root {
+            --primary: #4f46e5; --primary-dark: #3730a3;
+            --bg: #f3f4f6; --surface: #ffffff; --text: #1f2937; --text-light: #6b7280;
+            --border: #e5e7eb; --radius: 12px;
+            --shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; -webkit-tap-highlight-color: transparent; }
+        body { background: var(--bg); color: var(--text); padding-bottom: 80px; font-size: 15px; }
+        .hidden { display: none !important; }
+        .flex { display: flex; align-items: center; }
+        .flex-between { justify-content: space-between; }
+        .card { background: var(--surface); padding: 16px; border-radius: var(--radius); box-shadow: var(--shadow); margin-bottom: 12px; border: 1px solid var(--border); }
+        .btn { background: var(--primary); color: white; border: none; padding: 12px; border-radius: 8px; font-weight: 600; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 8px; width: 100%; transition: 0.2s; }
+        .navbar { position: sticky; top: 0; background: var(--surface); padding: 10px 16px; border-bottom: 1px solid var(--border); z-index: 100; display: flex; justify-content: space-between; align-items: center; }
+        .bottom-nav { position: fixed; bottom: 0; left: 0; width: 100%; background: var(--surface); border-top: 1px solid var(--border); display: flex; justify-content: space-around; padding: 8px 0; z-index: 1000; }
+        .nav-item { background: none; border: none; color: var(--text-light); font-size: 0.7rem; display: flex; flex-direction: column; align-items: center; gap: 4px; flex: 1; }
+        .nav-item.active { color: var(--primary); font-weight: 700; }
+        .marquee-container { background: var(--primary); color: white; overflow: hidden; white-space: nowrap; height: 35px; display: flex; align-items: center; }
+        .marquee-content { display: inline-block; padding-left: 100%; animation: scroll 20s linear infinite; }
+        @keyframes scroll { 0% { transform: translateX(0); } 100% { transform: translateX(-100%); } }
     </style>
 </head>
 <body>
-    <div class="login-container" id="loginScreen">
-        <div class="login-icon"><i class="fas fa-lock"></i></div>
-        <h1 class="login-title">Admin Login</h1>
-        <form class="login-form" id="loginForm">
-            <input type="text" id="adminId" placeholder="Admin ID" required>
-            <input type="password" id="adminPassword" placeholder="Password" required>
-            <button type="submit" class="login-btn">Login</button>
-            <div class="login-error" id="loginError">Invalid credentials</div>
-        </form>
-        <div style="margin-top: 20px; color: #666; font-size: 14px;">
-            <p>ID: <strong>mahamud5545</strong></p>
-            <p>Password: <strong>545545</strong></p>
-        </div>
+
+    <div id="loadingScreen" style="position: fixed; inset: 0; background: var(--primary); display: flex; flex-direction: column; justify-content: center; align-items: center; color: white; z-index: 5000;">
+        <i class="fas fa-meteor fa-spin" style="font-size: 3rem; margin-bottom: 20px;"></i>
+        <h2>MRDS v6.2</h2>
+        <p>অটোমেটিক লগইন হচ্ছে...</p>
     </div>
 
-    <div id="mainApp" style="display: none;">
-        <header>
-            <div class="container header-content">
-                <div class="logo"><i class="fas fa-book-open"></i><h1>PDF Library Admin</h1></div>
-                <div class="user-info"><span id="loggedInUser">Admin</span><button class="logout-btn" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Logout</button></div>
+    <div id="app" class="hidden">
+        <nav class="navbar">
+            <div class="nav-brand"><i class="fas fa-book-reader"></i> <span id="headerTitle">হোম</span></div>
+            <div class="flex gap-3 items-center">
+                <div class="text-right" style="margin-right: 10px;">
+                    <div class="text-xs text-light" id="navName">User</div>
+                    <div class="text-sm font-bold text-success" id="navBal">৳0</div>
+                </div>
+                <img src="" id="navAvatar" style="width:35px; height:35px; border-radius:50%; object-fit:cover;" onerror="this.src='https://via.placeholder.com/35'">
             </div>
-            <div class="container"><div class="nav-tabs">
-                <button class="tab-btn active" data-tab="admin"><i class="fas fa-user-shield"></i> Admin Panel</button>
-                <button class="tab-btn" data-tab="stats"><i class="fas fa-chart-bar"></i> Statistics</button>
-            </div></div>
-        </header>
+        </nav>
 
-        <div class="container main-content">
-            <div class="app-container active" id="admin">
-                <h2 class="app-title"><i class="fas fa-user-cog"></i> Admin Panel</h2>
-                <div class="upload-tabs">
-                    <button class="upload-tab active" data-upload-type="drive">Google Drive Upload</button>
-                    <button class="upload-tab" data-upload-type="file">File Upload</button>
+        <div class="marquee-container">
+            <div class="marquee-content" id="marqueeText">স্বাগতম! ডাটা লোড হচ্ছে...</div>
+        </div>
+
+        <div class="p-4" style="padding: 15px;">
+            <div id="view-home" class="view">
+                <div class="card" style="border-left: 4px solid #f59e0b;">
+                    <b class="text-primary">হ্যালির ধূমকেতু অফিসিয়াল ব্লগ</b>
+                    <p class="text-xs text-light">সরাসরি অ্যাপ থেকে আপডেট পান।</p>
                 </div>
-                <div id="driveUploadForm">
-                    <div style="background: #f9f9f9; border-radius: 10px; padding: 25px; margin-top: 20px;">
-                        <h4><i class="fab fa-google-drive"></i> Add PDF from Google Drive</h4>
-                        <div class="form-group"><input type="text" id="driveLink" class="form-control" placeholder="Google Drive link"></div>
-                        <div class="form-group"><input type="text" id="drivePdfName" class="form-control" placeholder="PDF Name"></div>
-                        <div class="form-group"><textarea id="drivePdfDescription" class="form-control" rows="3" placeholder="Description"></textarea></div>
-                        <div class="form-group"><label>Select Categories</label><div class="category-select" id="driveCategorySelect"></div></div>
-                        <button class="btn btn-google" id="addDrivePdfBtn"><i class="fab fa-google-drive"></i> Add PDF</button>
-                        <div class="drive-link-preview" id="driveLinkPreview"><h5>Preview:</h5><a id="previewDriveLink" href="#" target="_blank">Link</a></div>
-                    </div>
-                </div>
-                <div id="fileUploadForm" style="display: none;">
-                    <div class="upload-area" id="uploadArea"><i class="fas fa-cloud-upload-alt"></i><h3>Upload PDF Files</h3><p>Drag & drop or click to browse</p><input type="file" id="fileInput" accept=".pdf" style="display: none;" multiple></div>
-                </div>
-                <div class="admin-sections">
-                    <div class="section-card">
-                        <h3><i class="fas fa-file-pdf"></i> PDF Management</h3>
-                        <div class="form-group"><select id="categoryFilter" class="form-control"><option value="all">All Categories</option></select></div>
-                        <div class="pdf-list" id="pdfListContainer"></div>
-                    </div>
-                    <div class="section-card">
-                        <h3><i class="fas fa-tags"></i> Category Management</h3>
-                        <div class="form-group"><div style="display: flex; gap: 10px;"><input type="text" id="newCategoryName" class="form-control" placeholder="New category"><button class="btn btn-success" id="addCategoryBtn"><i class="fas fa-plus"></i> Add</button></div></div>
-                        <div class="category-list" id="categoryListContainer"></div>
-                    </div>
-                </div>
+                <h4 class="mb-2"><i class="fas fa-rss"></i> নিউজফিড</h4>
+                <div id="postsContainer">লুডিং পোস্ট...</div>
             </div>
-            <div class="app-container" id="stats">
-                <h2 class="app-title"><i class="fas fa-chart-pie"></i> Statistics</h2>
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 30px;">
-                    <div style="background: white; border-radius: 10px; padding: 20px; box-shadow: 0 3px 10px rgba(0,0,0,0.08); display: flex; align-items: center; gap: 15px;">
-                        <div style="background: #e3f2fd; width: 60px; height: 60px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 24px; color: #2196f3;"><i class="fas fa-file-pdf"></i></div>
-                        <div><h3 style="font-size: 28px; margin-bottom: 5px;" id="totalPdfs">0</h3><p>Total PDFs</p></div>
-                    </div>
-                    <div style="background: white; border-radius: 10px; padding: 20px; box-shadow: 0 3px 10px rgba(0,0,0,0.08); display: flex; align-items: center; gap: 15px;">
-                        <div style="background: #e8f5e9; width: 60px; height: 60px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 24px; color: #4caf50;"><i class="fas fa-tags"></i></div>
-                        <div><h3 style="font-size: 28px; margin-bottom: 5px;" id="totalCategories">0</h3><p>Categories</p></div>
-                    </div>
-                    <div style="background: white; border-radius: 10px; padding: 20px; box-shadow: 0 3px 10px rgba(0,0,0,0.08); display: flex; align-items: center; gap: 15px;">
-                        <div style="background: #fff3e0; width: 60px; height: 60px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 24px; color: #ff9800;"><i class="fas fa-download"></i></div>
-                        <div><h3 style="font-size: 28px; margin-bottom: 5px;" id="totalDownloads">0</h3><p>Downloads</p></div>
-                    </div>
+            
+            <div id="view-exam" class="view hidden"><h4>চলমান এক্সাম</h4><div id="examList"></div></div>
+            <div id="view-wallet" class="view hidden">
+                <div class="card text-center" style="background: linear-gradient(135deg, #4338ca, #6366f1); color: white; padding: 20px;">
+                    <p>ব্যালেন্স</p>
+                    <h1 id="walletBigBal">৳0</h1>
                 </div>
-                <div style="background: white; border-radius: 10px; padding: 20px; box-shadow: 0 3px 10px rgba(0,0,0,0.08);"><h3 style="margin-bottom: 15px;">Recent Activity</h3><div id="activityLog"></div></div>
             </div>
         </div>
 
-        <div class="modal" id="pdfEditorModal">
-            <div class="modal-content">
-                <div class="modal-header"><h3>Edit PDF</h3><button class="close-modal" id="closeEditorModal">&times;</button></div>
-                <div class="modal-body">
-                    <div class="form-group"><label>PDF Name</label><input type="text" id="editPdfName" class="form-control"></div>
-                    <div class="form-group"><label>Description</label><textarea id="editPdfDescription" class="form-control" rows="3"></textarea></div>
-                    <div class="form-group"><label>Categories</label><div class="category-select" id="categorySelectContainer"></div></div>
-                    <div class="form-group" id="editDriveLinkSection"><label>Google Drive Link</label><input type="text" id="editDriveLink" class="form-control"></div>
-                    <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 30px;">
-                        <button class="btn btn-primary" id="savePdfChangesBtn"><i class="fas fa-save"></i> Save</button>
-                        <button class="btn" id="cancelEditBtn" style="background: #f0f0f0;">Cancel</button>
-                    </div>
-                </div>
-            </div>
+        <div class="bottom-nav">
+            <button class="nav-item active" onclick="nav('home', this)"><i class="fas fa-home"></i> হোম</button>
+            <button class="nav-item" onclick="nav('exam', this)"><i class="fas fa-clipboard-check"></i> এক্সাম</button>
+            <button class="nav-item" onclick="nav('wallet', this)"><i class="fas fa-wallet"></i> ওয়ালেট</button>
         </div>
-        <footer><div class="container"><p>PDF Library Admin &copy; 2023 | Firebase Integrated</p></div></footer>
     </div>
 
     <script>
-        // অটো-লগইন স্ক্রিপ্ট
-window.onload = function() {
-    setTimeout(() => {
-        document.getElementById('loginMobile').value = '017'; // আপনার নম্বর
-        document.getElementById('loginPass').value = '1234'; // আপনার পাসওয়ার্ড
-        handleLogin(); // অটো লগইন ফাংশন কল
-    }, 1000); 
-};
-        const ADMIN_ID = "mahamud5545";
-        const ADMIN_PASSWORD = "545545";
-        let categories = [];
-        let pdfs = [];
-        let editingPdfId = null;
+        const firebaseConfig = {
+            apiKey: "AIzaSyBC9hwiWQS0rPMyvj3XVPdpExB1RSyQi1E",
+            authDomain: "myblogapp-8e9e5cc8.firebaseapp.com",
+            databaseURL: "https://myblogapp-8e9e5cc8-default-rtdb.firebaseio.com/",
+            projectId: "myblogapp-8e9e5cc8",
+            storageBucket: "myblogapp-8e9e5cc8.firebasestorage.app",
+            messagingSenderId: "995232144893",
+            appId: "1:995232144893:web:9ca49253831a0e06404d94"
+        };
 
-        document.getElementById('loginForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            const adminId = document.getElementById('adminId').value;
-            const password = document.getElementById('adminPassword').value;
-            
-            if(adminId === ADMIN_ID && password === ADMIN_PASSWORD) {
-                try {
-                    const auth = window.firebase.auth;
-                    const db = window.firebase.database;
-                    const ref = window.firebase.ref;
-                    const set = window.firebase.set;
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        // অটো লগইন করার জন্য মোবাইল নম্বর (আপনার ডাটাবেসে থাকা নম্বর দিন)
+        const DEFAULT_USER_ID = "01700000000"; 
+        let CURR_USER = null;
+
+        // অ্যাপ শুরু হওয়ার ফাংশন
+        async function initApp() {
+            try {
+                const snapshot = await db.ref('users/' + DEFAULT_USER_ID).once('value');
+                const userData = snapshot.val();
+
+                if (userData) {
+                    CURR_USER = { id: DEFAULT_USER_ID, ...userData };
+                    updateUI();
+                    loadPosts();
+                    loadNotice();
                     
-                    await signInWithEmailAndPassword(auth, "admin@rds-library.com", "545545");
-                    const userRef = ref(db, 'users/' + auth.currentUser.uid);
-                    await set(userRef, { username: ADMIN_ID, isAdmin: true });
-                    
-                    document.getElementById('loginScreen').style.display = 'none';
-                    document.getElementById('mainApp').style.display = 'block';
-                    initAdminApp();
-                    addActivity("Admin logged in", "login");
-                } catch(error) {
-                    document.getElementById('loginError').style.display = 'block';
-                }
-            } else {
-                document.getElementById('loginError').style.display = 'block';
-            }
-        });
-
-        document.getElementById('logoutBtn').addEventListener('click', async function() {
-            await window.firebase.signOut(window.firebase.auth);
-            location.reload();
-        });
-
-        async function initAdminApp() {
-            loadCategories();
-            loadPDFs();
-            setupEventListeners();
-        }
-
-        async function loadCategories() {
-            const db = window.firebase.database;
-            const ref = window.firebase.ref;
-            const onValue = window.firebase.onValue;
-            
-            const categoriesRef = ref(db, 'categories');
-            onValue(categoriesRef, (snapshot) => {
-                categories = [];
-                snapshot.forEach((child) => {
-                    categories.push({ id: child.key, ...child.val() });
-                });
-                renderCategories();
-            });
-        }
-
-        async function loadPDFs() {
-            const db = window.firebase.database;
-            const ref = window.firebase.ref;
-            const onValue = window.firebase.onValue;
-            
-            const pdfsRef = ref(db, 'pdfs');
-            onValue(pdfsRef, (snapshot) => {
-                pdfs = [];
-                snapshot.forEach((child) => {
-                    pdfs.push({ id: child.key, ...child.val() });
-                });
-                renderAdminPdfList();
-                updateStats();
-            });
-        }
-
-        function renderCategories() {
-            const container = document.getElementById('categoryListContainer');
-            const filter = document.getElementById('categoryFilter');
-            const driveSelect = document.getElementById('driveCategorySelect');
-            
-            container.innerHTML = '';
-            filter.innerHTML = '<option value="all">All Categories</option>';
-            driveSelect.innerHTML = '';
-            
-            categories.forEach(cat => {
-                container.innerHTML += `
-                    <div class="category-item">
-                        <span class="category-tag ${cat.color}">${cat.name}</span>
-                        <div class="category-actions">
-                            <button class="btn btn-warning btn-sm" onclick="editCategory('${cat.id}')"><i class="fas fa-edit"></i></button>
-                            <button class="btn btn-danger btn-sm" onclick="deleteCategory('${cat.id}')"><i class="fas fa-trash"></i></button>
-                        </div>
-                    </div>`;
-                
-                filter.innerHTML += `<option value="${cat.id}">${cat.name}</option>`;
-                driveSelect.innerHTML += `<div class="category-option" onclick="toggleCategory(this)" data-id="${cat.id}"><i class="fas fa-circle"></i>${cat.name}</div>`;
-            });
-        }
-
-        function renderAdminPdfList() {
-            const container = document.getElementById('pdfListContainer');
-            const filter = document.getElementById('categoryFilter').value;
-            
-            let filtered = filter === 'all' ? pdfs : pdfs.filter(p => p.categories && p.categories.includes(filter));
-            
-            if(filtered.length === 0) {
-                container.innerHTML = '<p style="text-align: center; color: #777; padding: 30px;">No PDFs found</p>';
-                return;
-            }
-            
-            let html = '';
-            filtered.forEach(pdf => {
-                const pdfCats = categories.filter(c => pdf.categories && pdf.categories.includes(c.id));
-                html += `
-                <div class="pdf-item">
-                    <div class="pdf-icon"><i class="fas fa-file-pdf"></i>${pdf.type==='drive'?'<i class="fab fa-google-drive" style="color:#4285F4;font-size:12px;"></i>':''}</div>
-                    <div class="pdf-info">
-                        <h4>${pdf.name}</h4>
-                        <p>${pdf.type==='drive'?'Google Drive':'File'} • Size: ${pdf.size||'N/A'} • Uploaded: ${pdf.uploadDate}</p>
-                        <div class="pdf-categories">${pdfCats.map(c=>`<span class="category-tag ${c.color}">${c.name}</span>`).join('')}</div>
-                    </div>
-                    <div class="pdf-actions">
-                        <button class="btn btn-primary" onclick="openEditPdfModal('${pdf.id}')"><i class="fas fa-edit"></i> Edit</button>
-                        <button class="btn btn-danger" onclick="deletePdf('${pdf.id}')"><i class="fas fa-trash"></i> Delete</button>
-                    </div>
-                </div>`;
-            });
-            container.innerHTML = html;
-        }
-
-        document.getElementById('addDrivePdfBtn').addEventListener('click', async function() {
-            const link = document.getElementById('driveLink').value;
-            const name = document.getElementById('drivePdfName').value;
-            const desc = document.getElementById('drivePdfDescription').value;
-            const selected = Array.from(document.querySelectorAll('#driveCategorySelect .category-option.selected')).map(el => el.dataset.id);
-            
-            if(!link || !name || selected.length === 0) {
-                alert('Please fill all fields');
-                return;
-            }
-            
-            const db = window.firebase.database;
-            const ref = window.firebase.ref;
-            const push = window.firebase.push;
-            const set = window.firebase.set;
-            
-            const pdfsRef = ref(db, 'pdfs');
-            const newPdfRef = push(pdfsRef);
-            await set(newPdfRef, {
-                name, description: desc, driveLink: link, categories: selected,
-                type: 'drive', size: 'Google Drive', uploadDate: new Date().toISOString().split('T')[0], downloads: 0
-            });
-            
-            document.getElementById('driveLink').value = '';
-            document.getElementById('drivePdfName').value = '';
-            document.getElementById('drivePdfDescription').value = '';
-            document.querySelectorAll('#driveCategorySelect .category-option.selected').forEach(el => el.classList.remove('selected'));
-            addActivity(`Added PDF: ${name}`, 'upload');
-            alert('PDF added successfully!');
-        });
-
-        window.toggleCategory = function(el) {
-            el.classList.toggle('selected');
-        };
-
-        window.editCategory = function(id) {
-            const cat = categories.find(c => c.id === id);
-            const newName = prompt("Edit category name:", cat.name);
-            if(newName) {
-                const db = window.firebase.database;
-                const ref = window.firebase.ref;
-                const update = window.firebase.update;
-                
-                update(ref(db, 'categories/' + id), { name: newName });
-                addActivity(`Updated category to: ${newName}`, 'edit');
-            }
-        };
-
-        window.deleteCategory = function(id) {
-            if(confirm('Delete this category?')) {
-                const db = window.firebase.database;
-                const ref = window.firebase.ref;
-                const remove = window.firebase.remove;
-                
-                remove(ref(db, 'categories/' + id));
-                addActivity('Deleted category', 'delete');
-            }
-        };
-
-        document.getElementById('addCategoryBtn').addEventListener('click', async function() {
-            const name = document.getElementById('newCategoryName').value;
-            if(!name) return;
-            
-            const db = window.firebase.database;
-            const ref = window.firebase.ref;
-            const push = window.firebase.push;
-            const set = window.firebase.set;
-            
-            const colors = ['technology','business','academic','literature','science','history'];
-            const catsRef = ref(db, 'categories');
-            const newCatRef = push(catsRef);
-            await set(newCatRef, { name, color: colors[Math.floor(Math.random()*colors.length)] });
-            
-            document.getElementById('newCategoryName').value = '';
-            addActivity(`Added category: ${name}`, 'category');
-        });
-
-        window.openEditPdfModal = function(id) {
-            const pdf = pdfs.find(p => p.id === id);
-            if(!pdf) return;
-            
-            editingPdfId = id;
-            document.getElementById('editPdfName').value = pdf.name;
-            document.getElementById('editPdfDescription').value = pdf.description;
-            document.getElementById('editDriveLink').value = pdf.driveLink || '';
-            
-            const container = document.getElementById('categorySelectContainer');
-            container.innerHTML = '';
-            categories.forEach(cat => {
-                const selected = pdf.categories && pdf.categories.includes(cat.id);
-                container.innerHTML += `<div class="category-option ${selected?'selected':''}" onclick="toggleCategory(this)" data-id="${cat.id}"><i class="fas fa${selected?'-check':''}-circle"></i>${cat.name}</div>`;
-            });
-            
-            document.getElementById('pdfEditorModal').classList.add('active');
-        };
-
-        document.getElementById('savePdfChangesBtn').addEventListener('click', async function() {
-            const name = document.getElementById('editPdfName').value;
-            const desc = document.getElementById('editPdfDescription').value;
-            const link = document.getElementById('editDriveLink').value;
-            const selected = Array.from(document.querySelectorAll('#categorySelectContainer .category-option.selected')).map(el => el.dataset.id);
-            
-            if(!name || selected.length === 0) {
-                alert('Please fill required fields');
-                return;
-            }
-            
-            const db = window.firebase.database;
-            const ref = window.firebase.ref;
-            const update = window.firebase.update;
-            
-            await update(ref(db, 'pdfs/' + editingPdfId), {
-                name, description: desc, driveLink: link, categories: selected
-            });
-            
-            document.getElementById('pdfEditorModal').classList.remove('active');
-            addActivity(`Updated PDF: ${name}`, 'edit');
-        });
-
-        window.deletePdf = function(id) {
-            if(confirm('Delete this PDF?')) {
-                const db = window.firebase.database;
-                const ref = window.firebase.ref;
-                const remove = window.firebase.remove;
-                
-                remove(ref(db, 'pdfs/' + id));
-                addActivity('Deleted PDF', 'delete');
-            }
-        };
-
-        function updateStats() {
-            document.getElementById('totalPdfs').textContent = pdfs.length;
-            document.getElementById('totalCategories').textContent = categories.length;
-            const totalDownloads = pdfs.reduce((sum, pdf) => sum + (pdf.downloads || 0), 0);
-            document.getElementById('totalDownloads').textContent = totalDownloads;
-        }
-
-        function addActivity(text, type) {
-            const log = document.getElementById('activityLog');
-            const now = new Date();
-            const time = now.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
-            const icon = type==='edit'?'fa-edit':type==='delete'?'fa-trash':type==='category'?'fa-tag':'fa-history';
-            const bg = type==='edit'?'#fff3e0':type==='delete'?'#ffebee':type==='category'?'#e3f2fd':'#e8f5e9';
-            const color = type==='edit'?'#ff9800':type==='delete'?'#f44336':type==='category'?'#2196f3':'#4caf50';
-            
-            log.innerHTML = `<div style="display:flex; align-items:center; padding:10px 0; border-bottom:1px solid #eee;">
-                <div style="width:40px; height:40px; border-radius:50%; background:${bg}; color:${color}; display:flex; align-items:center; justify-content:center; margin-right:15px;"><i class="fas ${icon}"></i></div>
-                <div><h4 style="margin-bottom:5px; font-size:16px;">${text}</h4><p style="color:#888; font-size:14px;">${time} • ${now.toDateString()}</p></div>
-            </div>` + log.innerHTML;
-            
-            if(log.children.length > 10) log.removeChild(log.lastChild);
-        }
-
-        function setupEventListeners() {
-            document.querySelectorAll('.tab-btn').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-                    btn.classList.add('active');
-                    document.querySelectorAll('.app-container').forEach(c => c.classList.remove('active'));
-                    document.getElementById(btn.dataset.tab).classList.add('active');
-                });
-            });
-            
-            document.querySelectorAll('.upload-tab').forEach(tab => {
-                tab.addEventListener('click', () => {
-                    document.querySelectorAll('.upload-tab').forEach(t => t.classList.remove('active'));
-                    tab.classList.add('active');
-                    document.getElementById('driveUploadForm').style.display = tab.dataset.uploadType === 'drive' ? 'block' : 'none';
-                    document.getElementById('fileUploadForm').style.display = tab.dataset.uploadType === 'file' ? 'block' : 'none';
-                });
-            });
-            
-            document.getElementById('categoryFilter').addEventListener('change', renderAdminPdfList);
-            document.getElementById('closeEditorModal').addEventListener('click', () => document.getElementById('pdfEditorModal').classList.remove('active'));
-            document.getElementById('cancelEditBtn').addEventListener('click', () => document.getElementById('pdfEditorModal').classList.remove('active'));
-            document.getElementById('driveLink').addEventListener('input', function() {
-                const preview = document.getElementById('driveLinkPreview');
-                const link = document.getElementById('previewDriveLink');
-                if(this.value.includes('drive.google.com')) {
-                    preview.classList.add('active');
-                    link.href = this.value;
-                    link.textContent = this.value;
+                    // লোডিং স্ক্রিন সরিয়ে অ্যাপ দেখানো
+                    document.getElementById('loadingScreen').classList.add('hidden');
+                    document.getElementById('app').classList.remove('hidden');
                 } else {
-                    preview.classList.remove('active');
+                    alert("ইউজার পাওয়া যায়নি! ডাটাবেসে ০১৭০০০০০০০০ নম্বরটি আছে কিনা চেক করুন।");
                 }
-            });
-            
-            const uploadArea = document.getElementById('uploadArea');
-            const fileInput = document.getElementById('fileInput');
-            uploadArea.addEventListener('click', () => fileInput.click());
-            fileInput.addEventListener('change', async function(e) {
-                for(let file of e.target.files) {
-                    if(file.type === 'application/pdf') {
-                        const storage = window.firebase.storage;
-                        const storageRef = window.firebase.storageRef;
-                        const uploadBytes = window.firebase.uploadBytes;
-                        const getDownloadURL = window.firebase.getDownloadURL;
-                        const db = window.firebase.database;
-                        const ref = window.firebase.ref;
-                        const push = window.firebase.push;
-                        const set = window.firebase.set;
-                        
-                        const fileRef = storageRef(storage, 'pdfs/' + Date.now() + '_' + file.name);
-                        await uploadBytes(fileRef, file);
-                        const url = await getDownloadURL(fileRef);
-                        
-                        const pdfsRef = ref(db, 'pdfs');
-                        const newPdfRef = push(pdfsRef);
-                        await set(newPdfRef, {
-                            name: file.name.replace('.pdf', ''),
-                            description: 'Uploaded PDF file',
-                            fileURL: url,
-                            categories: ['1'],
-                            type: 'file',
-                            size: (file.size/1024/1024).toFixed(1) + ' MB',
-                            uploadDate: new Date().toISOString().split('T')[0],
-                            downloads: 0
-                        });
-                        
-                        addActivity(`Uploaded: ${file.name}`, 'upload');
-                    }
-                }
-                alert('Files uploaded!');
-                fileInput.value = '';
-            });
+            } catch (error) {
+                console.error(error);
+                alert("Database Connection Error!");
+            }
         }
+
+        function updateUI() {
+            document.getElementById('navName').innerText = CURR_USER.name;
+            document.getElementById('navBal').innerText = "৳" + CURR_USER.bal;
+            document.getElementById('walletBigBal').innerText = "৳" + CURR_USER.bal;
+            if(CURR_USER.avatar) document.getElementById('navAvatar').src = CURR_USER.avatar;
+        }
+
+        async function loadPosts() {
+            const snap = await db.ref('posts').limitToLast(10).once('value');
+            const posts = snap.val();
+            let html = '';
+            for(let id in posts) {
+                const p = posts[id];
+                html += `<div class="card">
+                    <b>${p.t}</b>
+                    <p style="font-size:0.9rem; margin-top:5px;">${p.c}</p>
+                    ${p.img ? `<img src="${p.img}" style="width:100%; border-radius:8px; margin-top:10px;">` : ''}
+                </div>`;
+            }
+            document.getElementById('postsContainer').innerHTML = html;
+        }
+
+        async function loadNotice() {
+            const snap = await db.ref('notice').once('value');
+            if(snap.val()) document.getElementById('marqueeText').innerText = snap.val();
+        }
+
+        function nav(viewId, btn) {
+            document.querySelectorAll('.view').forEach(v => v.classList.add('hidden'));
+            document.getElementById('view-' + viewId).classList.remove('hidden');
+            document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+            btn.classList.add('active');
+            document.getElementById('headerTitle').innerText = viewId.toUpperCase();
+        }
+
+        // রান অ্যাপ
+        initApp();
     </script>
 </body>
 </html>
