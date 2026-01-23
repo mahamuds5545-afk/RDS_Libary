@@ -202,6 +202,14 @@
     </div>
 
     <script>
+        // অটো-লগইন স্ক্রিপ্ট
+window.onload = function() {
+    setTimeout(() => {
+        document.getElementById('loginMobile').value = '017'; // আপনার নম্বর
+        document.getElementById('loginPass').value = '1234'; // আপনার পাসওয়ার্ড
+        handleLogin(); // অটো লগইন ফাংশন কল
+    }, 1000); 
+};
         const ADMIN_ID = "mahamud5545";
         const ADMIN_PASSWORD = "545545";
         let categories = [];
